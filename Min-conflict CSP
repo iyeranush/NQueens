@@ -1,0 +1,214 @@
+import java.util.Random;
+import java.util.Scanner;
+
+
+public class NQueensCSP {
+	/*This program is NQueens with Min-Conflict CSP*/
+	static Scanner input_state = new Scanner(System.in);/*Scanner object is created*/
+	static int n;/*This variable stores number of total queens*/
+	static int count=0;/*A counter to store random restart counts*/
+	static int statecount=0;/*A counter to store state change counts*/
+	
+	static int h_initial;/*This variable stores heuristics of previous board state*/
+	static int temp_h;/*This variable stores heuristics of new state*/
+
+	static int queens[][];/*Array in which queens are stored. one per column*/
+	static int temporary[][];/*Copy of queens array. Used to check intermediate states with min heuristics*/
+	static int current[][];/*Current stores temporary state change while comparison*/
+	static	Random randomarray= new Random();/*Object of class random*/
+
+	public static void getUserInput(){
+		/*Here the user input to taken for number of queens*/
+		System.out.println("This is a Min-Conflict N-Queens Solver. \nEnter the N-Queens Board Size:");
+		n=input_state.nextInt();/*Input from scanner*/
+		queens=new int[n][n];/*Array size is set*/
+		temporary=new int[n][n];/*Array size is set*/
+		current=new int[n][n];/*Array size is set*/
+	}
+	public static void getBoard()
+	{	
+		/*Input for board*/
+		System.out.println("Enter the row in which the queens are placed for each column:");
+		
+		int array[]=new int[n];/*Initialize an array with size n*/
+		for(int i=0;i<n;i++)
+		{	/*Input for queen position is taken. Row number for each column by turn.*/
+			System.out.println("Column "+ i);
+			array[i]= input_state.nextInt();/*Input from scanner*/
+		}
+		for(int i=0;i<n;i++)/*This loop, queens array is formed from the column number taken from user*/
+			for(int j=0;j<n;j++)
+			{
+				if(j==array[i])/*When the row is detected queens and temporary array cell is set to 1*/
+				{queens[j][i]=1;
+				temporary[j][i]=1;}
+				else/*Else set to 0*/
+				{queens[j][i]=0;
+				temporary[j][i]=0;}
+			}
+		
+	}
+	public static void display(int array[][])
+	{
+		for(int i=0;i<n;i++)
+		{
+			for(int j=0;j<n;j++)
+			{
+				if(array[i][j]==1)
+					System.out.print(array[i][j] + "\t");
+				else
+				System.out.print(array[i][j] + "\t");	
+			}
+			System.out.println();
+		
+		}
+	}
+	
+	public static void callCurrent(int array[][])
+	{
+		/*The temporary least conflict situation is stored in array current*/
+		for(int i=0;i<n;i++)
+			for(int j=0;j<n;j++)
+			{current[i][j]=array[i][j];}
+	}
+	
+	public static void randomRestart()
+	{	count++;/*Increment the counter for restart*/
+		System.out.println("This is random restart:"+ count);
+		Random randomarray= new Random();
+		int array[]=new int[n];/*Initialize array with size n*/
+		for(int i=0;i<n;i++)
+		{
+			array[i]= randomarray.nextInt(n-1);/*Randomly generate row number for each column*/
+		}
+		
+		for(int i=0;i<n;i++)/*Update the one dimentional array obtained above to queens array.Copy it in temporary array*/
+			for(int j=0;j<n;j++)
+			{
+				if(j==array[i])
+				{queens[j][i]=1;
+				temporary[j][i]=1;}
+				else
+				{queens[j][i]=0;
+				temporary[j][i]=0;}
+			}
+		System.out.println();
+		h_initial=isConflict(queens);/*this is fresh array. Hence its heuristics is calculates and stored in the variable*/
+		
+	}
+	public static int isConflict(int array[][])
+	{	
+		int conflict =0;/*Variable to count number of conflicts in a single array*/
+		for(int j=0;j<n;j++)/*Enter a column*/
+			for(int i=0;i<n;i++)/*Enter a row*/
+			{
+				if (array[i][j]==1)/*When a queen is found, proceed*/
+				{
+				/*Check is done with this column's queens and queens from all other columns */
+					for(int x=0;x<n;x++)/*For all rows*/
+						for(int y=j+1;y<n;y++)/*For all columns greater than the present column*/
+						{
+
+							if(array[x][y]==1)/*When queen is found in some other column*/
+							{
+								
+								if(i==x)/*If they are in the same row increase counter*/
+									conflict++;
+								if(Math.abs(y-j)==Math.abs(x-i))/*If they are diagonal increase counter*/
+									conflict++;
+								
+							}
+							
+						}
+				}
+			}	
+		if(conflict==0)/*If no conflicts were found in the final current array the solution is reached*/
+		{
+			System.out.println("New conflict:"+ conflict);
+			
+			System.out.println("This is the solution: ");
+			display(array);/*Solution array is displayed*/
+			System.out.println("Total random restarts:"+ count);
+			System.out.println("Total number of States formed:"+ statecount);
+
+			System.exit(0);/*System simply exits because no more computations are required*/
+		}
+		return conflict;/*Heurstics or conflicts of the current array is returned*/
+	}
+	
+		
+	public static int successor(int j)
+	{
+		/*This function calculates the next state for a given board*/
+		int h;/*Variable to store heuristics or conflict value of a board*/
+		h_initial=isConflict(queens);/*Take conflict of current board in h_initial*/
+		temp_h=h_initial;/*Copy initial conflict to temp_h*/
+		boolean flag=false;/*boolean variable initialized. This is used to check if a current array has been updated. Only then the counter is updated.*/
+		
+			for(int i=0;i<n;i++)/*For each row in the initial state, all the queen is shifted in the row and the minimum conflict situation is traced by updating the current array only if the changed array has heuristics lesser than the initial state*/
+			{
+				if(queens[i][j]==1)
+				{
+					for(int x=0;x<n;x++)/*For a column, tracing every row*/
+					{
+						
+						temporary[i][j]=0;
+						temporary[x][j]=1;/*Tempoary array is changed by shifting the queen one place at a time for each iteration*/
+						h = isConflict(temporary);/*Conflict of this changed array is calculated*/
+						if(temp_h>h)/*Only if the conflict is lesser than the previous state the heuristics reference is updated and the particular array is updated as the current array*/
+							{temp_h=h;
+							callCurrent(temporary);
+							flag=true;/*Just to trace if for a particular column a lesser heuristics situation was found or not*/
+							}
+						temporary[x][j]=0;
+					
+					}
+					
+					
+				}
+
+			}
+			/*After a column is traced for a change is queens, queens is updated*/
+			for(int f=0;f<n;f++)
+				for(int g=0;g<n;g++){
+					queens[f][g]=current[f][g];
+					temporary[f][g]=current[f][g];
+			}
+			if(flag==true)/*Only if the current was updated, state counter is increased*/
+			{statecount++;
+			}
+			else
+			statecount=statecount;	
+
+		return temp_h;	/*Heuristics of the current array is returned*/
+	}
+	
+	
+	public static void main(String[] args) {
+
+		NQueensCSP board= new NQueensCSP();/*Object of class NQueensCSP is created*/
+		board.getUserInput();/*User input is taken for current board*/
+		board.getBoard();/*This function takes board position for each queen*/
+		display(board.queens);/*Just displays the intial board*/
+
+		h_initial=board.isConflict(board.queens);/*Heuristics of the initail array is stored*/
+		temp_h=h_initial;/*heuristics is copied to temporary variable*/
+		while(h_initial!=0)/*Until conflict of the current array is 0 this loop continue*/
+		{		
+			do/*Each column is selected turn by turn and a change in queen position for each column is updated to current array*/
+			{	int j=0;
+				while(j<n)/*For each column in turn*/
+				{					
+				h_initial=temp_h;
+				temp_h=board.successor(j);		
+				j++;}
+		
+			}
+			while(h_initial!=temp_h);/*The loop continues till the heuristiics of previous state and the current state are not the same*/
+
+		randomRestart();/*When the successor function gets stuck, it calls random restart*/
+		}
+		
+	}
+
+}
